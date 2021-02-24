@@ -12,6 +12,9 @@ unobtrusively integrated into any application or framework that supports
 [Connect](http://www.senchalabs.org/connect/)-style middleware, including
 [Express](http://expressjs.com/).
 
+추가 변경사항 - twitch v5 버전 이상, user 정보 호출에, Client id를 요구하기 때문에,
+이 부분 변경
+
 ## Install
 ```bash
 $ npm install passport-twitch
@@ -35,7 +38,7 @@ passport.use(new twitchStrategy({
     callbackURL: "http://127.0.0.1:3000/auth/twitch/callback",
     scope: "user_read"
   },
-  function(accessToken, refreshToken, profile, done) {
+  function(accessToken, refreshToken, params ,profile, done) {
     User.findOrCreate({ twitchId: profile.id }, function (err, user) {
       return done(err, user);
     });
@@ -70,7 +73,6 @@ app.get("/auth/twitch", passport.authenticate("twitch", {forceVerify: true}));
 
 ```javascript
 var express        = require("express");
-var bodyParser     = require("body-parser");
 var cookieParser   = require("cookie-parser");
 var cookieSession  = require("cookie-session");
 var passport       = require("passport");
@@ -82,17 +84,18 @@ app.set("views", "./views");
 app.set("view engine", "ejs");
 
 // Middlewares
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({extended:false}));
 app.use(cookieParser());
 app.use(cookieSession({secret:"somesecrettokenhere"}));
 app.use(passport.initialize());
 app.use(express.static("./public"));
 
 passport.use(new twitchStrategy({
-    clientID: "098f6bcd4621d373cade4e832627b4f6",
-    clientSecret: "4eb20288afaed97e82bde371260db8d8",
-    callbackURL: "http://127.0.0.1:3000/auth/twitch/callback",
-    scope: "user_read"
+    clientID: "----USER CLIENT ID----",
+    clientSecret: "----USER CLIENT SECRET----",//
+    callbackURL: "http://localhost:3000/auth/twitch/callback",
+    scope: ["channel:moderate","channel_subscriptions","user_read"].join(" ")
   },
   function(accessToken, refreshToken, profile, done) {
     // Suppose we are using mongo..
@@ -106,6 +109,7 @@ passport.serializeUser(function(user, done) {
     done(null, user);
 });
 
+// not working
 passport.deserializeUser(function(user, done) {
     done(null, user);
 });
